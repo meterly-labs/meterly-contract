@@ -1,0 +1,25 @@
+[workspace]
+resolver = "2"
+members = [
+    "contracts/registry",
+    "contracts/escrow",
+    "contracts/receipt",
+]
+
+[workspace.dependencies]
+soroban-sdk = { version = "28.0.0", features = ["testutils"] }
+
+# Overflow checks are mandatory in both profiles as a defence-in-depth measure
+# against integer-overflow vulnerabilities (ref: soroban-sdk CVE in versions
+# before 25.0.2 / 23.5.1 affecting Bytes::slice, Vec::slice, Prng::gen_range).
+# Even on a patched SDK this must remain on.
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+debug = false
+strip = "symbols"
+lto = true
+codegen-units = 1
+
+[profile.dev]
+overflow-checks = true

@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  build-test:
+    name: Build, Test, Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.91.0"
+          targets: wasm32v1-none
+          components: rustfmt, clippy
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install stellar-cli
+        run: cargo install stellar-cli --version 28.0.0 --locked
+
+      - name: cargo fmt check
+        run: cargo fmt --all --check
+
+      - name: cargo clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: cargo test
+        run: cargo test --workspace --all-features
+
+      - name: Build contracts (wasm32v1-none)
+        run: stellar contract build
+        working-directory: contracts/registry
+
+      - name: Build escrow (wasm32v1-none)
+        run: stellar contract build
+        working-directory: contracts/escrow
+
+      - name: Build receipt (wasm32v1-none)
+        run: stellar contract build
+        working-directory: contracts/receipt
