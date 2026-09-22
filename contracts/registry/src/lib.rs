@@ -6,6 +6,7 @@
 
 #![no_std]
 
+mod errors;
 mod types;
 
 use soroban_sdk::{contract, contractimpl, Env};
